@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>15P 상세페이지 실시간 편집기</title>
+<style>
+:root{--panel:#fff;--card:#fff;--text:#111;--muted:#666;--border:#e7e7e7;--accent:#111;--accent-bg:#f2f2f2}
+*{box-sizing:border-box}body{margin:0;background:#f5f5f5;font-family:Pretendard,SUIT,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--text)}
+#detail-editor{max-width:1500px;margin:0 auto;padding:20px}
+.de-shell{display:grid;grid-template-columns:minmax(320px,.8fr) minmax(0,1.2fr);gap:18px;align-items:start}
+.de-panel{min-width:0;border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--panel);position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+.de-pages{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px}
+.de-pagebtn{flex:0 0 auto;min-width:42px;height:42px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-weight:700;cursor:pointer}
+.de-pagebtn[aria-current="true"]{background:var(--accent-bg);border-color:var(--accent)}
+.de-group{display:grid;gap:10px}.de-title{font-size:18px;font-weight:800;letter-spacing:-.03em;margin:0 0 4px}.de-help{font-size:12px;line-height:1.55;color:var(--muted);margin:0 0 10px}
+label{display:grid;gap:5px;font-size:12px;font-weight:700;color:var(--muted)}input[type="text"],textarea{width:100%;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);padding:10px 11px;font:inherit;font-size:16px;outline:none}textarea{min-height:78px;resize:vertical;line-height:1.55}input:focus,textarea:focus{border-color:var(--accent)}
+.de-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.de-row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.de-upload{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px;border:1px dashed var(--border);border-radius:10px}.de-upload button,.top-actions button{min-height:42px;border:0;border-radius:9px;padding:0 12px;background:#111;color:#fff;font-weight:700;cursor:pointer}.de-file-label{font-size:12px;color:var(--muted)}
+.de-upload-preview{width:52px;height:52px;border-radius:8px;overflow:hidden;background:#f1f1f1;border:1px solid var(--border);flex:0 0 auto}
+.de-upload-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.de-media-img{width:100%;height:100%;object-fit:cover;display:block}
+.de-media-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;background:#f1f1f1;color:#8a8a8a;font-size:12px;line-height:1.45}
+
+.de-stage{min-width:0}.de-stagebar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.de-stagebar strong{font-size:14px}.de-ratio{font-size:12px;color:var(--muted)}.top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.top-actions button.secondary{background:#eee;color:#111}
+.de-canvas-wrap{width:100%;display:flex;justify-content:center}.de-canvas{width:min(100%,700px);aspect-ratio:1/1;background:#fff;border:1px solid var(--border);overflow:hidden;position:relative;color:#111}.de-canvas.tall{aspect-ratio:2/3}.de-pad{padding:5.5%;height:100%}.center{text-align:center}.leftTxt{text-align:left}
+.eyebrow{font-size:clamp(8px,1.35vw,13px);letter-spacing:.18em;color:#777;text-transform:uppercase}.h1{font-size:clamp(24px,5.3vw,54px);line-height:1.16;letter-spacing:-.055em;font-weight:800;white-space:pre-line}.h2{font-size:clamp(20px,3.7vw,38px);line-height:1.22;letter-spacing:-.05em;font-weight:800;white-space:pre-line}.h3{font-size:clamp(15px,2.4vw,24px);line-height:1.35;letter-spacing:-.035em;font-weight:800}.body{font-size:clamp(11px,1.8vw,18px);line-height:1.66;color:#333;white-space:pre-line}.small{font-size:clamp(9px,1.4vw,14px);line-height:1.55;color:#666}
+.hero-bg{position:absolute;inset:0;background:#eee;overflow:hidden}.hero-shade{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.48),rgba(255,255,255,.10) 40%,rgba(255,255,255,.18))}.hero-copy{position:absolute;inset:0;padding:8% 7%;text-align:center;display:flex;flex-direction:column;align-items:center}.brand{font-size:clamp(14px,2.4vw,24px);font-weight:800}.spacer{height:4%}
+.info-box{border:1px solid #ececec;border-radius:14px;background:#fafafa;padding:3%;display:grid;gap:2%}.info-row{display:grid;grid-template-columns:28% 1fr;gap:2%;padding:1.4% 0;border-bottom:1px solid #ededed;font-size:clamp(9px,1.55vw,15px)}.info-row:last-child{border-bottom:0}
+.five-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1.2%;margin-top:3%}.five-card{border:1px solid #ececec;background:#fff;border-radius:12px;overflow:hidden}.five-thumb{aspect-ratio:1/1;background:#f0f0f0;overflow:hidden}.five-text{padding:6%;text-align:center;font-size:clamp(7px,1.25vw,12px);line-height:1.35}
+.map-list{display:grid;gap:1.2%;margin-top:3%}.map-item{display:grid;grid-template-columns:8% 1fr 7% 1fr;gap:1.2%;align-items:stretch}.num{display:flex;align-items:center;justify-content:center;border-radius:10px;background:#f5f5f5;font-size:clamp(8px,1.3vw,13px);font-weight:800}.mapbox{padding:4%;border-radius:12px;border:1px solid #eee;background:#fafafa;font-size:clamp(8px,1.35vw,13px);line-height:1.45}.arrow{display:flex;align-items:center;justify-content:center;color:#888;font-weight:800}
+.guide-flow{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5%;margin-top:3%}.guide-card{border:1px solid #ececec;border-radius:14px;padding:5%;background:#fff}.guide-num{width:28px;height:28px;border-radius:9px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-bottom:7%}.image-stage{position:relative;height:42%;margin-top:3%;background:#f1f1f1;border-radius:16px;overflow:hidden}.image-caption{position:absolute;left:3%;right:3%;bottom:3%;display:grid;grid-template-columns:1fr 1fr;gap:2%}.badge{background:rgba(255,255,255,.94);border:1px solid #eee;border-radius:12px;padding:4%;font-size:clamp(8px,1.3vw,13px);line-height:1.45}
+.quotes{display:grid;grid-template-columns:1fr 1fr;gap:1.2%;margin-top:3%}.quote{border:1px solid #e5e5e5;border-radius:10px;padding:3%;text-align:center;font-size:clamp(8px,1.3vw,13px);line-height:1.45}.fits{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2%;margin-top:3%}.fit{border:1px solid #e5e5e5;border-radius:12px;overflow:hidden;text-align:center}.fit h4{margin:0;background:#ededed;padding:4%;font-size:clamp(9px,1.4vw,14px)}.fit p{margin:0;padding:5%;font-size:clamp(8px,1.25vw,12px);line-height:1.5;white-space:pre-line}
+.full-image{position:absolute;inset:0;background:#f1f1f1;overflow:hidden}.element-head{text-align:center}.circle{width:42px;height:42px;border-radius:999px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;margin:0 auto 2%}.element-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:1.5%;height:63%;margin-top:3%}.element-main{background:#f1f1f1;border-radius:14px;overflow:hidden}.element-side{display:grid;grid-template-rows:1fr 1fr;gap:1.5%}.element-detail{background:#f1f1f1;border-radius:14px;overflow:hidden}
+.common-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:3%;align-items:start}.section-line{height:1px;background:#ddd;margin:3% 0}.care-list{display:grid;gap:2%;margin-top:3%}.care-item{display:grid;grid-template-columns:8% 1fr;gap:2%;align-items:start}.care-dot{width:100%;aspect-ratio:1/1;border-radius:999px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:clamp(8px,1.4vw,14px)}
+@media(max-width:900px){.de-shell{grid-template-columns:1fr}.de-panel{position:relative;top:auto;max-height:none}.de-row2,.de-row3{grid-template-columns:1fr}.de-canvas{width:100%}}
+</style>
+</head>
+<body>
+<div id="detail-editor">
+  <div class="de-shell">
+    <section class="de-panel">
+      <div class="de-pages" id="de-nav"></div>
+      <h2 class="de-title" id="de-editor-title">1P 인트로</h2>
+      <p class="de-help">입력하면 오른쪽 미리보기에 바로 반영됩니다.</p>
+      <div class="de-group" id="de-fields"></div>
+    </section>
+    <section class="de-stage">
+      <div class="top-actions"><button id="save-page">현재 페이지 JPG 저장</button><button id="prev" class="secondary">이전</button><button id="next" class="secondary">다음</button></div>
+      <div class="de-stagebar"><strong id="de-stage-title">01. 인트로</strong><span class="de-ratio" id="de-ratio">1000 × 1500</span></div>
+      <div class="de-canvas-wrap"><div id="de-canvas" class="de-canvas tall"></div></div>
+    </section>
+  </div>
+  <input id="de-file" type="file" accept="image/*" hidden>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+(function(){
+const root=document.getElementById('detail-editor'),nav=document.getElementById('de-nav'),fields=document.getElementById('de-fields'),canvas=document.getElementById('de-canvas'),file=document.getElementById('de-file'),editorTitle=document.getElementById('de-editor-title'),stageTitle=document.getElementById('de-stage-title'),ratio=document.getElementById('de-ratio');
+const C=['#5d8458','#df9f98','#bea04e','#858585','#5c79ab']; let current=0,uploadTarget=null;
+const data={
+p1:{brand:'47B.Ag',tag:'925SILVER JEWELRY BRAND',line1:'부족한 기운을 담아,',line2:'매일 함께하는 오행 팔찌',sub:'당신만의 에너지 밸런스를 맞춰주는 주얼리',sub2:'천연석과 비휴가 전하는 다섯 가지 에너지',image:''},
+p2:{name:'실버999 비휴 오행 팔찌',one:'당신만의 에너지 밸런스를 맞춰주는 주얼리',material:'999Silver, 천연석',bead:'약 4mm',pixiu:'약 8mm × 5mm',length:'M 약16.4cm / L 약17.5cm / XL 약19cm',intro:'사주는 타고난 기운의 흐름을 보여주며, 오행은 그 흐름을 이루는 다섯 가지 에너지를 의미합니다.',thumbs:['','','','','']},
+p3:{needs:['매사 의욕 저하, 무기력함','시들한 인간관계, 열정 저하','일상의 불안감, 마음의 동요','결단력 부족, 우유부단함','일과 재물의 답답한 정체'],stones:['그린 칼세도니 · 새로운 시작','핑크 화이트 칼세도니 · 관계 에너지','옐로우 드래곤 제이드 · 안정','그레이 아게이트 · 결단','블루 아벤츄린 · 지혜']},
+p4:{headline:'내게 맞는 기운,\n천천히 살펴보는 순서',sub:'지금의 흐름을 읽고, 맞는 오행 원석을 고르세요',tip:'무료 만세력으로 내 오행 분포를 먼저 확인해 보세요.',steps:[['현재 흐름 보기','요즘 자주 느끼는 감정과 생활 흐름을 가볍게 점검합니다.'],['부족한 기운 읽기','무기력, 관계, 불안, 결단, 정체감 중 가까운 흐름을 확인합니다.'],['맞는 원석 고르기','부족한 오행에 맞는 천연석과 비휴를 선택합니다.']],image:''},
+p5:{reco:['내 사주에 부족한 오행의 기운을 채우고 싶은 분','일상의 균형과 안정이 필요하다고 느끼는 분','복잡한 생각을 비우고 싶은 분','새로운 도전에 응원을 더하고 싶은 분','소중한 이에게 행운을 전하고 싶은 분'],fits:[['M 추천 손목','14~15.5cm','14cm 넉넉\n15cm 적당한 핏\n15.5cm 딱 맞아요'],['L 추천 손목','16~17.5cm','16cm 넉넉\n17.5cm 적당한 핏'],['XL 추천 손목','17.5~19cm','17.5cm 넉넉\n19cm 적당한 핏']]},
+p6:{image:''},p7:{image:''},p8:{image:''},
+p9:{symbol:'木',meta:'목의 기운',name:'그린 칼세도니',benefit:'건강운 · 새로운 활력',desc:'지친 몸과 마음에 생기를 불어넣고 무기력함을 보완합니다.',images:['','','']},
+p10:{symbol:'火',meta:'화의 기운',name:'핑크 화이트 칼세도니',benefit:'인간관계 · 빛나는 에너지',desc:'얼어붙은 기운을 녹여 열정을 깨우고 사회적 에너지를 높여줍니다.',images:['','','']},
+p11:{symbol:'土',meta:'토의 기운',name:'옐로우 드래곤 제이드',benefit:'마음의 안정 · 번창',desc:'흔들리는 감정을 다독이고 안정과 균형의 흐름을 더해줍니다.',images:['','','']},
+p12:{symbol:'金',meta:'금의 기운',name:'그레이 아게이트',benefit:'재물운 · 결단력',desc:'우유부단한 마음을 정리하고 중심을 단단하게 세워줍니다.',images:['','','']},
+p13:{symbol:'水',meta:'수의 기운',name:'블루 아벤츄린',benefit:'지혜 · 스트레스 완화',desc:'막힌 흐름을 부드럽게 풀어주고 차분한 통찰과 여유를 더해줍니다.',images:['','','']},
+p14:{gift:'프리미엄 패키지와 함께 보내드립니다.',hand:'아이디어 스케치부터 도면, 세팅 작업까지 직접 정성스럽게 제작합니다.',ship:'CJ대한통운을 통해 발송됩니다. 배송 및 교환·반품은 상품 안내 기준을 확인해 주세요.',as:'A/S 보증기간과 접수 기준은 상품 안내에 따라 적용됩니다.',images:['','','']},
+p15:{caution:['모니터 환경에 따라 색상이 달라 보일 수 있습니다.','수공예 특성상 미세한 흔적이 있을 수 있습니다.','도금 제품은 수분과 화장품 접촉을 피해주세요.','무리한 힘을 가하면 형태가 손상될 수 있습니다.'],care:'925 실버 제품은 수분, 땀, 화장품, 공기 노출 등에 의해 변색될 수 있습니다. 착용 후 부드러운 천으로 닦아 밀봉 보관해 주세요.'}
+};
+const pages=[['인트로','1000 × 1500'],['상품 정보 & 오행 소개','1000 × 1000'],['부족한 기운과 추천 원석','1000 × 1000'],['오행 선택 가이드','1000 × 1000'],['추천 흐름 & 착용감','1000 × 1000'],['제품 연출컷','1000 × 1000'],['제품 누끼컷','1000 × 1000'],['제품 착용컷','1000 × 1000'],['목(木)','1000 × 1000'],['화(火)','1000 × 1000'],['토(土)','1000 × 1000'],['금(金)','1000 × 1000'],['수(水)','1000 × 1000'],['공통 안내','1000 × 1000'],['주의사항 & 관리','1000 × 1000']];
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function nl(s){return esc(s).replace(/\n/g,'<br>')}
+function media(url,label){
+  return url
+    ? '<img class="de-media-img" src="'+url+'" alt="'+esc(label||'업로드 이미지')+'">'
+    : '<div class="de-media-empty">'+esc(label||'이미지를 넣어주세요')+'</div>';
+}
+function field(label,value,onInput,multi=false){const lab=document.createElement('label');lab.textContent=label;const el=document.createElement(multi?'textarea':'input');if(!multi)el.type='text';el.value=value;el.addEventListener('input',()=>{onInput(el.value);renderPreview()});lab.appendChild(el);return lab}
+function upload(label,onDone,currentUrl){
+  const box=document.createElement('div');
+  box.className='de-upload';
+
+  const preview=document.createElement('div');
+  preview.className='de-upload-preview';
+  preview.innerHTML=currentUrl
+    ? '<img src="'+currentUrl+'" alt="'+esc(label)+'">'
+    : '<div class="de-media-empty" style="font-size:10px;padding:4px">미리보기</div>';
+
+  const b=document.createElement('button');
+  b.type='button';
+  b.textContent=currentUrl?'이미지 변경':'이미지 넣기';
+
+  const t=document.createElement('span');
+  t.className='de-file-label';
+  t.textContent=label+(currentUrl?' · 적용됨':'');
+
+  b.addEventListener('click',()=>{
+    uploadTarget=onDone;
+    file.value='';
+    file.click();
+  });
+  box.append(preview,b,t);
+  return box;
+}
+file.addEventListener('change',()=>{const f=file.files&&file.files[0];if(!f||!uploadTarget)return;const r=new FileReader();r.onload=()=>{uploadTarget(r.result);renderEditor();renderPreview()};r.readAsDataURL(f)});
+function addNav(){nav.innerHTML='';pages.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.className='de-pagebtn';b.textContent=String(i+1).padStart(2,'0');b.setAttribute('aria-current',i===current?'true':'false');b.addEventListener('click',()=>{current=i;renderEditor();renderPreview();addNav()});nav.appendChild(b)})}
+function renderEditor(){fields.innerHTML='';editorTitle.textContent=(current+1)+'P '+pages[current][0];stageTitle.textContent=String(current+1).padStart(2,'0')+'. '+pages[current][0];ratio.textContent=pages[current][1];canvas.classList.toggle('tall',current===0);const p=data['p'+(current+1)];
+if(current===0){fields.append(field('브랜드명',p.brand,v=>p.brand=v),field('브랜드 태그라인',p.tag,v=>p.tag=v),field('메인 카피 첫째 줄',p.line1,v=>p.line1=v),field('메인 카피 둘째 줄',p.line2,v=>p.line2=v),field('설명 문구',p.sub,v=>p.sub=v),field('보조 문구',p.sub2,v=>p.sub2=v),upload('배경 이미지',v=>p.image=v,p.image))}
+else if(current===1){fields.append(field('제품명',p.name,v=>p.name=v),field('대표 문구',p.one,v=>p.one=v));const g=document.createElement('div');g.className='de-row2';g.append(field('소재',p.material,v=>p.material=v),field('원석 사이즈',p.bead,v=>p.bead=v),field('비휴 사이즈',p.pixiu,v=>p.pixiu=v),field('상세 길이',p.length,v=>p.length=v));fields.append(g,field('오행 설명',p.intro,v=>p.intro=v,true));p.thumbs.forEach((_,i)=>fields.append(upload(['목','화','토','금','수'][i]+' 썸네일',v=>p.thumbs[i]=v,p.thumbs[i])))}
+else if(current===2){for(let i=0;i<5;i++){const g=document.createElement('div');g.className='de-row2';g.append(field(['목','화','토','금','수'][i]+' 부족할 때',p.needs[i],v=>p.needs[i]=v),field('추천 원석',p.stones[i],v=>p.stones[i]=v));fields.append(g)}}
+else if(current===3){fields.append(field('메인 제목',p.headline,v=>p.headline=v,true),field('보조 문구',p.sub,v=>p.sub=v),field('가이드 팁',p.tip,v=>p.tip=v));p.steps.forEach((s,i)=>{const g=document.createElement('div');g.className='de-row2';g.append(field((i+1)+'단계 제목',s[0],v=>s[0]=v),field((i+1)+'단계 설명',s[1],v=>s[1]=v,true));fields.append(g)});fields.append(upload('제품 이미지',v=>p.image=v,p.image))}
+else if(current===4){p.reco.forEach((q,i)=>fields.append(field('추천 문구 '+(i+1),q,v=>p.reco[i]=v)));p.fits.forEach((f,i)=>{const g=document.createElement('div');g.className='de-row3';g.append(field(['M','L','XL'][i]+' 제목',f[0],v=>f[0]=v),field('손목 범위',f[1],v=>f[1]=v),field('착용감',f[2],v=>f[2]=v,true));fields.append(g)})}
+else if(current>=5&&current<=7){fields.append(upload('1000×1000 단독 이미지',v=>p.image=v,p.image))}
+else if(current>=8&&current<=12){fields.append(field('작은 타이틀',p.meta,v=>p.meta=v),field('원석명',p.name,v=>p.name=v),field('핵심 키워드',p.benefit,v=>p.benefit=v),field('설명',p.desc,v=>p.desc=v,true),upload('대표 착용컷',v=>p.images[0]=v,p.images[0]),upload('디테일 이미지 1',v=>p.images[1]=v,p.images[1]),upload('디테일 이미지 2',v=>p.images[2]=v,p.images[2]))}
+else if(current===13){fields.append(field('기프트 패키지',p.gift,v=>p.gift=v,true),field('핸드메이드',p.hand,v=>p.hand=v,true),field('배송 / 교환 / 반품',p.ship,v=>p.ship=v,true),field('A/S',p.as,v=>p.as=v,true));p.images.forEach((_,i)=>fields.append(upload('공통 이미지 '+(i+1),v=>p.images[i]=v,p.images[i])))}
+else{p.caution.forEach((q,i)=>fields.append(field('주의사항 '+(i+1),q,v=>p.caution[i]=v,true)));fields.append(field('주얼리 관리 안내',p.care,v=>p.care=v,true))}}
+function renderPreview(){const p=data['p'+(current+1)];let h='';
+if(current===0){h='<div class="hero-bg">'+media(p.image,'1P 배경 이미지')+'</div><div class="hero-shade"></div><div class="hero-copy"><div class="brand">'+esc(p.brand)+'</div><div class="eyebrow" style="margin-top:1.5%">'+esc(p.tag)+'</div><div class="spacer"></div><div class="h1">'+esc(p.line1)+'<br>'+esc(p.line2)+'</div><div class="body" style="margin-top:3%">'+esc(p.sub)+'</div><div class="small" style="margin-top:2%">'+esc(p.sub2)+'</div></div>'}
+else if(current===1){const names=['그린 칼세도니','핑크 칼세도니','옐로우 제이드','그레이 아게이트','블루 아벤츄린'];h='<div class="de-pad center"><div class="eyebrow">PRODUCT INFO</div><div class="h2" style="margin-top:2%">'+esc(p.name)+'</div><div class="body" style="margin-top:1.5%">'+esc(p.one)+'</div><div class="info-box leftTxt" style="margin-top:3%"><div class="info-row"><b>소재</b><span>'+esc(p.material)+'</span></div><div class="info-row"><b>원석 사이즈</b><span>'+esc(p.bead)+'</span></div><div class="info-row"><b>비휴 사이즈</b><span>'+esc(p.pixiu)+'</span></div><div class="info-row"><b>상세 길이</b><span>'+esc(p.length)+'</span></div></div><div class="h2" style="margin-top:4%">오행, 편하게 이해해 보세요</div><div class="body" style="margin-top:1.5%">'+esc(p.intro)+'</div><div class="five-grid">'+names.map((n,i)=>'<div class="five-card"><div class="five-thumb" style="'+bg(p.thumbs[i])+'"></div><div class="five-text"><b>'+['목','화','토','금','수'][i]+'</b><br>'+n+'</div></div>').join('')+'</div></div>'}
+else if(current===2){h='<div class="de-pad"><div class="center"><div class="h2">지금, 나에게<br>부족한 기운은 무엇인가요?</div><div class="small" style="margin-top:1.5%">왼쪽에서 현재 흐름을 보고, 오른쪽에서 추천 원석을 확인하세요.</div></div><div class="map-list">'+p.needs.map((n,i)=>'<div class="map-item"><div class="num">0'+(i+1)+'</div><div class="mapbox" style="background:'+C[i]+'15;color:'+C[i]+'"><b>'+['목','화','토','금','수'][i]+'이 부족할 때</b><br>'+esc(n)+'</div><div class="arrow">→</div><div class="mapbox"><b>추천 원석</b><br>'+esc(p.stones[i])+'</div></div>').join('')+'</div></div>'}
+else if(current===3){h='<div class="de-pad"><div class="center"><div class="eyebrow">CHOOSING GUIDE</div><div class="h2" style="margin-top:1.5%">'+nl(p.headline)+'</div><div class="body" style="margin-top:1.2%">'+esc(p.sub)+'</div></div><div class="info-box" style="margin-top:2.5%"><div class="small"><b>GUIDE TIP</b><br>'+esc(p.tip)+'</div></div><div class="guide-flow">'+p.steps.map((s,i)=>'<div class="guide-card"><div class="guide-num">0'+(i+1)+'</div><div class="h3">'+esc(s[0])+'</div><div class="small" style="margin-top:4%">'+esc(s[1])+'</div></div>').join('')+'</div><div class="image-stage">'+media(p.image,'오행 가이드 제품 이미지')+'<div class="image-caption"><div class="badge"><b>오행 천연석</b><br>각 오행을 상징하는 원석</div><div class="badge"><b>비휴 포인트</b><br>복과 재물을 지키는 상징</div></div></div></div>'}
+else if(current===4){h='<div class="de-pad"><div class="center"><div class="small">작은 변화가 좋은 흐름을 만듭니다</div><div class="h2" style="margin-top:1.5%">이런 흐름에 잘 어울려요</div></div><div class="quotes">'+p.reco.map(q=>'<div class="quote">“'+esc(q)+'”</div>').join('')+'</div><div class="center"><div class="h2" style="margin-top:4%">손목 둘레별 착용감</div><div class="small" style="margin-top:1%">상세 길이는 상품 정보에서 확인해 주세요.</div></div><div class="fits">'+p.fits.map(f=>'<div class="fit"><h4>'+esc(f[0])+'</h4><p><b>'+esc(f[1])+'</b><br><br>'+nl(f[2])+'</p></div>').join('')+'</div></div>'}
+else if(current>=5&&current<=7){h='<div class="full-image">'+media(p.image,'제품 단독 이미지')+'</div>'}
+else if(current>=8&&current<=12){h='<div class="de-pad"><div class="element-head"><div class="circle" style="background:'+C[current-8]+'">'+esc(p.symbol)+'</div><div class="eyebrow">'+esc(p.meta)+'</div><div class="h2" style="margin-top:1%">'+esc(p.name)+'</div><div class="h3" style="margin-top:1.5%">'+esc(p.benefit)+'</div><div class="small" style="margin-top:1%">'+esc(p.desc)+'</div></div><div class="element-grid"><div class="element-main">'+media(p.images[0],p.name+' 대표 착용컷')+'</div><div class="element-side"><div class="element-detail">'+media(p.images[1],p.name+' 디테일 1')+'</div><div class="element-detail">'+media(p.images[2],p.name+' 디테일 2')+'</div></div></div></div>'}
+else if(current===13){h='<div class="de-pad"><div class="center"><div class="eyebrow">INFORMATION</div><div class="h2" style="margin-top:1%">브랜드 공통 안내</div></div><div class="common-grid" style="margin-top:3%"><div><div class="h3">기프트 패키지</div><div class="body">'+esc(p.gift)+'</div></div><div class="five-thumb" style="height:auto;aspect-ratio:1.4/1">'+media(p.images[0],'기프트 패키지 이미지')+'</div></div><div class="section-line"></div><div class="common-grid"><div><div class="h3">핸드메이드</div><div class="body">'+esc(p.hand)+'</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:2%"><div class="five-thumb">'+media(p.images[1],'핸드메이드 이미지 1')+'</div><div class="five-thumb">'+media(p.images[2],'핸드메이드 이미지 2')+'</div></div></div><div class="section-line"></div><div class="h3">배송 및 교환·반품</div><div class="small" style="margin-top:1%">'+esc(p.ship)+'</div><div class="section-line"></div><div class="h3">A/S 안내</div><div class="small" style="margin-top:1%">'+esc(p.as)+'</div></div>'}
+else{h='<div class="de-pad"><div class="center"><div class="eyebrow">CARE GUIDE</div><div class="h2" style="margin-top:1%">착용시 주의사항 & 주얼리 관리</div></div><div class="care-list">'+p.caution.map((q,i)=>'<div class="care-item"><div class="care-dot">'+(i+1)+'</div><div class="body">'+esc(q)+'</div></div>').join('')+'</div><div class="section-line"></div><div class="h3">주얼리 관리 안내</div><div class="body" style="margin-top:1.5%">'+esc(p.care)+'</div></div>'}
+canvas.innerHTML=h}
+async function saveCurrent(){const scale=current===0?1000/canvas.getBoundingClientRect().width:1000/canvas.getBoundingClientRect().width;const c=await html2canvas(canvas,{scale:scale,useCORS:true,backgroundColor:'#fff'});const a=document.createElement('a');a.download='detail_page_'+String(current+1).padStart(2,'0')+'.jpg';a.href=c.toDataURL('image/jpeg',.95);a.click()}
+document.getElementById('save-page').addEventListener('click',saveCurrent);document.getElementById('prev').addEventListener('click',()=>{current=Math.max(0,current-1);addNav();renderEditor();renderPreview()});document.getElementById('next').addEventListener('click',()=>{current=Math.min(14,current+1);addNav();renderEditor();renderPreview()});
+addNav();renderEditor();renderPreview();
+})();
+</script>
+</body>
+</html>
